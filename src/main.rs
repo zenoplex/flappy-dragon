@@ -1,8 +1,9 @@
 use bracket_lib::prelude::*;
 
-const SCREEN_WIDTH: i32 = 80;
-const SCREEN_HEIGHT: i32 = 50;
-const FRAME_DURATION: f32 = 40.0;
+const SCREEN_WIDTH: i32 = 40;
+const SCREEN_HEIGHT: i32 = 25;
+const FRAME_DURATION: f32 = 75.0;
+const DRAGON_FRAMES: [u16; 6] = [64, 1, 2, 3, 2, 1];
 
 #[derive(Debug)]
 enum GameMode {
@@ -42,9 +43,9 @@ impl State {
 
     fn main_menu(&mut self, ctx: &mut BTerm) {
         ctx.cls();
-        ctx.print_centered(5, "Welcome to Flappy Dragon");
-        ctx.print_centered(8, "(P) Play Game");
-        ctx.print_centered(9, "(Q) Quit Game");
+        ctx.print_color_centered(5, YELLOW, BLACK, "Welcome to Flappy Dragon");
+        ctx.print_color_centered(8, CYAN, BLACK, "(P) Play Game");
+        ctx.print_color_centered(9, CYAN, BLACK, "(Q) Quit Game");
 
         if let Some(key) = ctx.key {
             match key {
@@ -70,7 +71,7 @@ impl State {
         self.player.render(ctx);
         ctx.print(0, 0, "Press SPACE to flap.");
         ctx.print(0, 1, &format!("Score {}", self.score));
-        if self.player.y > SCREEN_HEIGHT || self.obstacle.is_hit(&self.player) {
+        if self.player.y as i32 > SCREEN_HEIGHT || self.obstacle.is_hit(&self.player) {
             self.mode = GameMode::End;
         }
         self.obstacle.render(ctx, self.player.x);
@@ -107,21 +108,34 @@ impl State {
 
 struct Player {
     x: i32,
-    y: i32,
+    y: f32,
     velocity: f32,
+    frame: usize,
 }
 
 impl Player {
     fn new(x: i32, y: i32) -> Self {
         Player {
             x,
-            y,
+            y: y as f32,
             velocity: 0.0,
+            frame: 0,
         }
     }
 
     fn render(&mut self, ctx: &mut BTerm) {
-        ctx.set(0, self.y, YELLOW, BLACK, to_cp437('@'));
+        ctx.set_active_console(1);
+        ctx.cls();
+        ctx.set_fancy(
+            PointF::new(0.0, self.y),
+            1,
+            Degrees::new(0.0),
+            PointF::new(2.0, 2.0),
+            WHITE,
+            NAVY,
+            DRAGON_FRAMES[self.frame],
+        );
+        ctx.set_active_console(0);
     }
 
     fn gravity_and_move(&mut self) {
@@ -129,10 +143,10 @@ impl Player {
             self.velocity += 0.1;
         }
 
-        self.y += self.velocity as i32;
+        self.y += self.velocity;
         self.x += 1;
-        if self.y < 0 {
-            self.y = 0;
+        if self.y < 0.0 {
+            self.y = 0.0;
         }
     }
 
@@ -173,16 +187,28 @@ impl Obstacle {
     fn is_hit(&mut self, player: &Player) -> bool {
         let half_size = self.size / 2;
         let does_x_match = player.x == self.x;
-        let player_above_gap = player.y < self.gap_y - half_size;
-        let player_below_gap = player.y > self.gap_y + half_size;
+        let player_above_gap = (player.y as i32) < self.gap_y - half_size;
+        let player_below_gap = (player.y as i32) > self.gap_y + half_size;
 
         does_x_match && (player_above_gap || player_below_gap)
     }
 }
 
 fn main() -> BError {
-    let context = BTermBuilder::simple80x50()
+    let context = BTermBuilder::new()
         .with_title("Flappy Dragon")
+        .with_font("../resources/images/flappy32.png", 32, 32)
+        .with_simple_console(
+            SCREEN_WIDTH,
+            SCREEN_HEIGHT,
+            "../resources/images/flappy32.png",
+        )
+        .with_fancy_console(
+            SCREEN_WIDTH,
+            SCREEN_HEIGHT,
+            "../resources/images/flappy32.png",
+        )
+        .with_tile_dimensions(16, 16)
         .build()?;
 
     main_loop(context, State::new())
