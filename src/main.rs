@@ -16,6 +16,7 @@ struct State {
     frame_time: f32,
     mode: GameMode,
     obstacle: Obstacle,
+    score: u32,
 }
 
 impl GameState for State {
@@ -35,6 +36,7 @@ impl State {
             frame_time: 0.0,
             mode: GameMode::Menu,
             obstacle: Obstacle::new(SCREEN_WIDTH, 0),
+            score: 0,
         }
     }
 
@@ -67,15 +69,21 @@ impl State {
         }
         self.player.render(ctx);
         ctx.print(0, 0, "Press SPACE to flap.");
-        if self.player.y > SCREEN_HEIGHT {
+        ctx.print(0, 1, &format!("Score {}", self.score));
+        if self.player.y > SCREEN_HEIGHT || self.obstacle.is_hit(&self.player) {
             self.mode = GameMode::End;
         }
         self.obstacle.render(ctx, self.player.x);
+        if self.player.x > self.obstacle.x {
+            self.score += 1;
+            self.obstacle = Obstacle::new(self.player.x + SCREEN_WIDTH, self.score);
+        }
     }
 
     fn end(&mut self, ctx: &mut BTerm) {
         ctx.cls();
         ctx.print_centered(5, "You are dead");
+        ctx.print_centered(6, &format!("You earned {} points", &self.score));
         ctx.print_centered(8, "(P) Play Again");
         ctx.print_centered(9, "(Q) Quit Game");
 
@@ -93,6 +101,7 @@ impl State {
         self.player = Player::new(5, 25);
         self.frame_time = 0.0;
         self.obstacle = Obstacle::new(SCREEN_WIDTH, 0);
+        self.score = 0;
     }
 }
 
@@ -139,12 +148,12 @@ struct Obstacle {
 }
 
 impl Obstacle {
-    fn new(x: i32, score: i32) -> Self {
+    fn new(x: i32, score: u32) -> Self {
         let mut random = RandomNumberGenerator::new();
         Obstacle {
             x,
             gap_y: random.range(10, 40),
-            size: i32::max(2, 20 - score),
+            size: i32::max(2, 20 - score as i32),
         }
     }
 
@@ -159,6 +168,15 @@ impl Obstacle {
         for y in self.gap_y + half_size..SCREEN_HEIGHT {
             ctx.set(screen_x, y, RED, BLACK, to_cp437('/'));
         }
+    }
+
+    fn is_hit(&mut self, player: &Player) -> bool {
+        let half_size = self.size / 2;
+        let does_x_match = player.x == self.x;
+        let player_above_gap = player.y < self.gap_y - half_size;
+        let player_below_gap = player.y > self.gap_y + half_size;
+
+        does_x_match && (player_above_gap || player_below_gap)
     }
 }
 
