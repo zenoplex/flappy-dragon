@@ -4,6 +4,7 @@ const SCREEN_WIDTH: i32 = 40;
 const SCREEN_HEIGHT: i32 = 25;
 const FRAME_DURATION: f32 = 75.0;
 const DRAGON_FRAMES: [u16; 6] = [64, 1, 2, 3, 2, 1];
+const TRANSPARENT: (u8, u8, u8, u8) = (0, 0, 0, 0);
 
 #[derive(Debug)]
 enum GameMode {
@@ -132,7 +133,7 @@ impl Player {
             Degrees::new(0.0),
             PointF::new(2.0, 2.0),
             WHITE,
-            NAVY,
+            TRANSPARENT,
             DRAGON_FRAMES[self.frame],
         );
         ctx.set_active_console(0);
@@ -180,11 +181,11 @@ impl Obstacle {
         let half_size = self.size / 2;
 
         for y in 0..self.gap_y - half_size {
-            ctx.set(screen_x, y, RED, BLACK, to_cp437('/'));
+            ctx.set(screen_x, y, WHITE, TRANSPARENT, 179);
         }
 
         for y in self.gap_y + half_size..SCREEN_HEIGHT {
-            ctx.set(screen_x, y, RED, BLACK, to_cp437('/'));
+            ctx.set(screen_x, y, WHITE, TRANSPARENT, 179);
         }
     }
 
