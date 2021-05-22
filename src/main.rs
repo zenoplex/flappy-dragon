@@ -33,7 +33,7 @@ impl GameState for State {
 impl State {
     fn new() -> Self {
         State {
-            player: Player::new(5, 25),
+            player: Player::new(5, SCREEN_HEIGHT / 2),
             frame_time: 0.0,
             mode: GameMode::Menu,
             obstacle: Obstacle::new(SCREEN_WIDTH, 0),
@@ -83,10 +83,10 @@ impl State {
 
     fn end(&mut self, ctx: &mut BTerm) {
         ctx.cls();
-        ctx.print_centered(5, "You are dead");
+        ctx.print_color_centered(5, RED, BLACK, "You are dead");
         ctx.print_centered(6, &format!("You earned {} points", &self.score));
-        ctx.print_centered(8, "(P) Play Again");
-        ctx.print_centered(9, "(Q) Quit Game");
+        ctx.print_color_centered(8, CYAN, BLACK, "(P) Play Again");
+        ctx.print_color_centered(9, CYAN, BLACK, "(Q) Quit Game");
 
         if let Some(key) = ctx.key {
             match key {
@@ -99,7 +99,7 @@ impl State {
 
     fn restart(&mut self) {
         self.mode = GameMode::Playing;
-        self.player = Player::new(5, 25);
+        self.player = Player::new(5, SCREEN_HEIGHT / 2);
         self.frame_time = 0.0;
         self.obstacle = Obstacle::new(SCREEN_WIDTH, 0);
         self.score = 0;
@@ -144,14 +144,18 @@ impl Player {
         }
 
         self.y += self.velocity;
-        self.x += 1;
+
         if self.y < 0.0 {
             self.y = 0.0;
         }
+
+        self.x += 1;
+        self.frame += 1;
+        self.frame %= DRAGON_FRAMES.len();
     }
 
     fn flap(&mut self) {
-        self.velocity = -2.0;
+        self.velocity = -0.9;
     }
 }
 
@@ -166,8 +170,8 @@ impl Obstacle {
         let mut random = RandomNumberGenerator::new();
         Obstacle {
             x,
-            gap_y: random.range(10, 40),
-            size: i32::max(2, 20 - score as i32),
+            gap_y: random.range(SCREEN_HEIGHT / 5, SCREEN_HEIGHT / 2),
+            size: i32::max(2, 10 - score as i32),
         }
     }
 
