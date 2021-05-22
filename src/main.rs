@@ -1,3 +1,5 @@
+use std::f32::consts::PI;
+
 use bracket_lib::prelude::*;
 
 const SCREEN_WIDTH: i32 = 40;
@@ -127,10 +129,14 @@ impl Player {
     fn render(&mut self, ctx: &mut BTerm) {
         ctx.set_active_console(1);
         ctx.cls();
+
+        let rad = (1.0_f32).atan2(-self.velocity);
+        let angle = rad.to_degrees() - (PI.to_degrees() / 2.0);
+
         ctx.set_fancy(
             PointF::new(0.0, self.y),
             1,
-            Degrees::new(0.0),
+            Degrees::new(angle),
             PointF::new(2.0, 2.0),
             WHITE,
             TRANSPARENT,
